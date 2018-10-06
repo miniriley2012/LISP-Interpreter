@@ -1,0 +1,43 @@
+LISP
+
+Program Name: Lisp.java		Input File: lisp.dat
+
+LISP is a programming language that is recursive, although we won't implement
+that part of it yet.
+
+Some commands in LISP are:
+(ADD 6 3)
+(SUB 6 3)
+(ADD 4 5 9)
+(MUL 4 5 2 1)
+(DIV 7 2)
+(DIV 8 2)
+
+
+
+Output
+======
+For each LISP instruction (command), output the result.
+If the result does not have a fractional amount, output
+it as a whole number.
+
+Sample Input Data
+=================
+6
+(ADD 6 3)
+(SUB 6 3)
+(ADD 4 5 9)
+(MUL 4 5 2 1)
+(DIV 7 2)
+(DIV 8 2)
+
+
+Output to Screen
+================
+9
+3
+18
+40
+3.5
+4
+
