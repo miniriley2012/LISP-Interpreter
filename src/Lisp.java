@@ -1,7 +1,10 @@
 import java.io.File;
 import java.io.IOException;
 import java.text.StringCharacterIterator;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Scanner;
 
 import static java.lang.System.out;
 
@@ -11,6 +14,7 @@ enum Operation {
     MUL,
     DIV,
     SET,
+    PRINT,
     NULL
 }
 
@@ -45,10 +49,16 @@ class Lisp {
 //    }
 // --Commented out by Inspection STOP (10/6/18, 10:32 AM)
 
-    private static String nextWord(String delimiter) {
+    private static String nextWord(String delimiters) {
         StringBuilder str = new StringBuilder();
         char c;
-        while (delimiter.indexOf((c = iterator.next())) == -1) {
+
+        // HACK These two lines are needed to skip all spaces
+        while (iterator.next() == ' ') {
+        }
+        iterator.previous(); // Backs up 1
+
+        while (delimiters.indexOf((c = iterator.next())) == -1) {
             str.append(c);
         }
         iterator.previous(); // Includes delimiter
@@ -78,7 +88,7 @@ class Lisp {
         return tt;
     }
 
-    private static double execute(Group group) {
+    private static Double execute(Group group) {
         double result = 0;
 
         Operation op = chooseOperation(group.command);
@@ -113,7 +123,10 @@ class Lisp {
                 break;
 
             case SET:
-                return 0;
+                return null;
+
+            case PRINT:
+                return null;
         }
 
 //        out.println("Result of: " + op);
@@ -133,6 +146,8 @@ class Lisp {
                 return Operation.DIV;
             case "SET":
                 return Operation.SET;
+            case "PRINT":
+                return Operation.PRINT;
         }
         return Operation.NULL;
     }
@@ -140,17 +155,22 @@ class Lisp {
     private static double evaluate() {
         String command = nextWord(" ");
         ArrayList<String> list = new ArrayList<>();
-        boolean setVar = false;
+        boolean variableSet = false;
 
         iterator.next();
-        for (char c = iterator.current(); c != ')'; c = iterator.next()) {
+        for (char c = iterator.current(); c != ')' && c != iterator.DONE; c = iterator.next()) {
             String str = nextWord(" )");
-            if (str.charAt(0) == '(') {
+            if (str.isEmpty()) {
+                break;
+            }
+            if (str.charAt(0) == '(' && !command.equals("PRINT")) {
                 iterator.setIndex(iterator.getIndex() - str.length() + 1);
                 str = String.valueOf(evaluate());
             }
+
             list.add(str);
-            if (command.equals("SET") && !setVar) {
+
+            if (command.equals("SET") && !variableSet) {
                 iterator.next();
                 str = nextWord(" )");
                 if (str.charAt(0) == '(') { // TODO Find a way to remove this duplicate code
@@ -158,13 +178,39 @@ class Lisp {
                     str = String.valueOf(evaluate());
                 }
                 variables.put(list.get(0), makeNumber(str));
+                list.add(str);
                 list.remove(0);
-                setVar = true;
+                variableSet = true;
+            }
+
+            if (command.equals("PRINT")) {
+//                iterator.next();
+                if (str.charAt(0) == '$') {
+                    if (str.charAt(1) == '(') { // TODO Find a way to remove this duplicate code
+                        list.remove(list.size() - 1);
+                        iterator.setIndex(iterator.getIndex() - str.length() + 1);
+                        iterator.next();
+                        str = String.valueOf(evaluate());
+                    } else {
+                        String variable = str.substring(1);
+                        if (variables.containsKey(variable)) {
+                            list.remove(list.size() - 1);
+                            str = variables.get(variable).toString();
+                        }
+                    }
+                    list.add(str);
+                }
+//                iterator.next();
             }
         }
-
+        if (command.equals("PRINT")) {
+            System.out.println(list.toString().replaceAll("[\\[\\],]|(\\.0)", ""));
+            //noinspection ConstantConditions
+            return execute(new Group(command, null));
+        }
 
         var numbers = createList(list);
+        //noinspection ConstantConditions
         return execute(new Group(command, numbers));
     }
 
@@ -204,7 +250,11 @@ class Lisp {
                 }
 
                 if (c == '(') {
-                    System.out.println(String.valueOf(evaluate()).replaceAll("[\\[\\],]|(\\.0)", ""));
+                    try {
+                        Double evaluated = evaluate();
+                        System.out.println(String.valueOf(evaluated).replaceAll("[\\[\\],]|(\\.0)", ""));
+                    } catch (NullPointerException ignored) {
+                    }
                 }
             }
         }

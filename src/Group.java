@@ -1,12 +1,12 @@
 import java.util.ArrayList;
-import java.util.regex.Pattern;
 
-public class Group {
-    public final String command;
-    public final ArrayList<Double> numbers;
+class Group {
+    // TODO Use getters to make this more java-like
+    final String command;
+    final ArrayList<Double> numbers;
     // --Commented out by Inspection (10/6/18, 10:34 AM):private static final Pattern pattern = Pattern.compile("\\(.?(ADD|SUB|MUL|DIV).(.*\\d*).*.*\\)");
 
-    public Group(String command, ArrayList<Double> numbers) {
+    Group(String command, ArrayList<Double> numbers) {
         this.command = command;
         this.numbers = numbers;
     }
