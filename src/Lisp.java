@@ -222,7 +222,7 @@ class Lisp {
             }
         }
         if (command.equals("PRINT")) {
-            System.out.println(list.toString().replaceAll("[\\[\\],]|(\\.0$)", ""));
+            System.out.println(list.toString().replaceAll("[\\[\\],]", "").replaceAll("(\\.0$)", ""));
             //noinspection ConstantConditions
             return execute(new Group(command, null));
         }
@@ -273,7 +273,7 @@ class Lisp {
                 if (c == '(') {
                     try {
                         Double evaluated = evaluate();
-                        System.out.println(String.valueOf(evaluated).replaceAll("[\\[\\],]|(\\.0)", ""));
+                        System.out.println(String.valueOf(evaluated).replaceAll("(\\.0$)", ""));
                     } catch (NullPointerException ignored) {
                     }
                 }
