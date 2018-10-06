@@ -1,5 +1,5 @@
 import java.io.File;
-import java.io.IOException;
+import java.io.FileNotFoundException;
 import java.text.StringCharacterIterator;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -232,14 +232,28 @@ class Lisp {
         return execute(new Group(command, numbers));
     }
 
-    public static void main(String[] args) throws IOException {
+    private static void printUsage() {
+        System.out.println("Usage: " + Thread.currentThread().getStackTrace()[1].getClassName() + " lisp_file");
+    }
+
+    public static void main(String[] args) {
 
         // print out your name
 
+        if (args.length == 0) {
+            printUsage();
+            System.exit(1);
+        }
 
         out.println("Riley Quinn");
 
-        Scanner input = new Scanner(new File("lisp.dat")); // reads in the lisp.dat file
+        Scanner input = null;
+        try {
+            input = new Scanner(new File(args[0])); // reads in the lisp.dat file
+        } catch (FileNotFoundException e) {
+            System.out.println("File \"" + args[0] + "\" not found.");
+            System.exit(1);
+        }
 
         variables = new HashMap<>();
         variables.put("PI", Math.PI);
