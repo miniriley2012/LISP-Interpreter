@@ -14,6 +14,9 @@ enum Operation {
     MUL,
     DIV,
     MOD,
+    ROUND,
+    FLOOR,
+    CEIL,
     SET,
     PRINT,
     NULL
@@ -129,6 +132,15 @@ class Lisp {
                     result %= list.get(i);
                 }
                 break;
+
+            case ROUND:
+                return (double) Math.round(list.get(0));
+
+            case FLOOR:
+                return Math.floor(list.get(0));
+
+            case CEIL:
+                return Math.ceil(list.get(0));
 
             case SET:
                 return null;
