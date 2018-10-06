@@ -13,6 +13,7 @@ enum Operation {
     SUB,
     MUL,
     DIV,
+    MOD,
     SET,
     PRINT,
     NULL
@@ -122,6 +123,13 @@ class Lisp {
                 }
                 break;
 
+            case MOD:
+                result = list.get(0);
+                for (int i = 1; i < list.size(); i++) {
+                    result %= list.get(i);
+                }
+                break;
+
             case SET:
                 return null;
 
@@ -135,21 +143,11 @@ class Lisp {
     }
 
     private static Operation chooseOperation(String str) {
-        switch (str) {
-            case "ADD":
-                return Operation.ADD;
-            case "SUB":
-                return Operation.SUB;
-            case "MUL":
-                return Operation.MUL;
-            case "DIV":
-                return Operation.DIV;
-            case "SET":
-                return Operation.SET;
-            case "PRINT":
-                return Operation.PRINT;
+        try {
+            return Operation.valueOf(str);
+        } catch (IllegalArgumentException e) {
+            return Operation.NULL;
         }
-        return Operation.NULL;
     }
 
     private static double evaluate() {
@@ -184,7 +182,6 @@ class Lisp {
             }
 
             if (command.equals("PRINT")) {
-//                iterator.next();
                 if (str.charAt(0) == '$') {
                     if (str.charAt(1) == '(') { // TODO Find a way to remove this duplicate code
                         list.remove(list.size() - 1);
@@ -200,7 +197,6 @@ class Lisp {
                     }
                     list.add(str);
                 }
-//                iterator.next();
             }
         }
         if (command.equals("PRINT")) {
