@@ -20,7 +20,7 @@ class Lisp {
 //    private static boolean checkValid(String line) {
 //        return pattern.matcher(line).find();
 //    }
-// --Commented ou   t by Inspection STOP (10/6/18, 10:32 AM)
+// --Commented out by Inspection STOP (10/6/18, 10:32 AM)
 
     private static int currentLine;
 
@@ -45,6 +45,7 @@ class Lisp {
         char c;
 
         // HACK These two lines are needed to skip all spaces
+        //noinspection StatementWithEmptyBody
         while (iterator.next() == ' ') {
         }
         iterator.previous(); // Backs up 1
