@@ -5,22 +5,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.concurrent.ThreadLocalRandom;
 
 import static java.lang.System.out;
-
-enum Operation {
-    ADD,
-    SUB,
-    MUL,
-    DIV,
-    MOD,
-    ROUND,
-    FLOOR,
-    CEIL,
-    SET,
-    PRINT,
-    NULL
-}
 
 class Lisp {
     // no instance variables are needed
@@ -142,6 +129,27 @@ class Lisp {
             case CEIL:
                 return Math.ceil(list.get(0));
 
+            case SIN:
+                return Math.sin(list.get(0));
+
+            case COS:
+                return Math.cos(list.get(0));
+
+            case TAN:
+                return Math.tan(list.get(0));
+
+            case HYPOT:
+                return Math.hypot(list.get(0), list.get(1));
+
+            case RAND:
+                if (list.size() == 1) {
+                    return (double) ThreadLocalRandom.current().nextInt(0, list.get(0).intValue() + 1);
+                } else if (list.size() == 2) {
+                    return (double) ThreadLocalRandom.current().nextInt(list.get(0).intValue(), list.get(1).intValue() + 1);
+                } else {
+                    return ThreadLocalRandom.current().nextDouble();
+                }
+
             case SET:
                 return null;
 
@@ -163,14 +171,15 @@ class Lisp {
     }
 
     private static double evaluate() {
-        String command = nextWord(" ");
+        String command = nextWord(" \n");
         ArrayList<String> list = new ArrayList<>();
         boolean variableSet = false;
 
         iterator.next();
         for (char c = iterator.current(); c != ')' && c != iterator.DONE; c = iterator.next()) {
-            String str = nextWord(" )");
+            String str = nextWord(" )" + iterator.DONE);
             if (str.isEmpty()) {
+                command = command.substring(0, command.length() - 1);
                 break;
             }
             if (str.charAt(0) == '(' && !command.equals("PRINT")) {
@@ -212,7 +221,7 @@ class Lisp {
             }
         }
         if (command.equals("PRINT")) {
-            System.out.println(list.toString().replaceAll("[\\[\\],]|(\\.0)", ""));
+            System.out.println(list.toString().replaceAll("[\\[\\],]|(\\.0$)", ""));
             //noinspection ConstantConditions
             return execute(new Group(command, null));
         }
@@ -232,6 +241,9 @@ class Lisp {
         Scanner input = new Scanner(new File("lisp.dat")); // reads in the lisp.dat file
 
         variables = new HashMap<>();
+        variables.put("PI", Math.PI);
+        variables.put("E", Math.E);
+
         for (currentLine = 0; input.hasNextLine(); currentLine++) // loops through each data set
         {
 
