@@ -14,31 +14,10 @@ class Lisp {
 
     private static StringCharacterIterator iterator;
 
-    // --Commented out by Inspection (10/6/18, 10:34 AM):private static final Pattern pattern = Pattern.compile("\\(.?(ADD|SUB|MUL|DIV).(.*\\d*).*.*\\)");
-
-// --Commented out by Inspection START (10/6/18, 10:32 AM):
-//    private static boolean checkValid(String line) {
-//        return pattern.matcher(line).find();
-//    }
-// --Commented out by Inspection STOP (10/6/18, 10:32 AM)
-
     private static int currentLine;
 
     private static Map<String, Double> variables;
-
-// --Commented out by Inspection START (10/6/18, 10:32 AM):
-//    private static Group makeGroup(String line) {
-//        Matcher matcher = pattern.matcher(line);
-//
-//        if (matcher.matches()) {
-//            String numbers = matcher.group(2);
-//            var thing = new ArrayList<>(Arrays.asList(numbers.split("\\s")));
-//            return new Group(matcher.group(1), createList(thing));
-//        }
-//
-//        return null;
-//    }
-// --Commented out by Inspection STOP (10/6/18, 10:32 AM)
+    private static Map<String, Boolean> settings;
 
     private static String nextWord(String delimiters) {
         StringBuilder str = new StringBuilder();
@@ -197,6 +176,11 @@ class Lisp {
                     iterator.setIndex(iterator.getIndex() - str.length() + 1);
                     str = String.valueOf(evaluate());
                 }
+                if (settings.containsKey(list.get(0))) {
+                    settings.put(list.get(0), Boolean.valueOf(str));
+                    list.remove(0);
+                    continue;
+                }
                 variables.put(list.get(0), makeNumber(str));
                 list.add(str);
                 list.remove(0);
@@ -212,12 +196,22 @@ class Lisp {
                         str = String.valueOf(evaluate());
                     } else {
                         String variable = str.substring(1);
+                        list.remove(list.size() - 1);
                         if (variables.containsKey(variable)) {
-                            list.remove(list.size() - 1);
                             str = variables.get(variable).toString();
+                        } else {
+                            iterator.next();
+                            makeNumber(str.substring(1));
                         }
                     }
                     list.add(str);
+                } else if (str.charAt(0) == '(') {
+                    StringBuilder temp = new StringBuilder();
+                    while (iterator.next() != ')') {
+                        temp.append(iterator.current());
+                    }
+                    temp.append(iterator.current());
+                    list.add(temp.toString());
                 }
             }
         }
@@ -244,6 +238,10 @@ class Lisp {
         variables = new HashMap<>();
         variables.put("PI", Math.PI);
         variables.put("E", Math.E);
+
+        settings = new HashMap<>();
+        settings.put("_PRINT_LINES_", false);
+        settings.put("_STORE_ANS_", true);
 
         for (currentLine = 0; input.hasNextLine(); currentLine++) // loops through each data set
         {
@@ -273,8 +271,13 @@ class Lisp {
                 if (c == '(') {
                     try {
                         Double evaluated = evaluate();
-                        System.out.println(String.valueOf(evaluated).replaceAll("(\\.0$)", ""));
-                    } catch (NullPointerException ignored) {
+                        if (settings.get("_STORE_ANS_")) {
+                            variables.put("ANS", evaluated);
+                        }
+                        if (settings.get("_PRINT_LINES_")) {
+                            System.out.println(String.valueOf(evaluated).replaceAll("(\\.0$)", ""));
+                        }
+                    } catch (NullPointerException ignored) { // Ignored as I use null if there is nothing to be printed
                     }
                 }
             }
