@@ -34,12 +34,62 @@ class Lisp {
         return str.toString();
     }
 
+    private static void print(String str, ArrayList<String> list) {
+        if (str.equals("\\") || str.equals("$")) {
+            return;
+        }
+        if (str.charAt(0) == '\\') {
+            if (str.charAt(1) == '$') {
+                return;
+            } else if (str.charAt(1) == '\\') {
+                return;
+            }
+        }
+        if (str.charAt(0) == '$') {
+            if (str.charAt(1) == '(') { // TODO Find a way to remove this duplicate code
+                list.remove(list.size() - 1);
+                iterator.setIndex(iterator.getIndex() - str.length() + 1);
+                iterator.next();
+                str = String.valueOf(evaluate());
+            } else {
+                String variable = str.substring(1);
+                list.remove(list.size() - 1);
+                if (variables.containsKey(variable)) {
+                    str = variables.get(variable).toString();
+                } else {
+                    iterator.next();
+                    printNotDefined(str);
+                    System.exit(1);
+                }
+            }
+            list.add(str);
+        } else if (str.charAt(0) == '(') {
+            StringBuilder temp = new StringBuilder();
+            while (iterator.next() != ')') {
+                temp.append(iterator.current());
+            }
+            temp.append(iterator.current());
+            list.add(temp.toString());
+        }
+    }
+
+    private static void printError(String str, String message) {
+        int firstChar = (iterator.getIndex() - str.length() + 1);
+        System.err.printf("Error at %d:%s%n%s%n", currentLine, firstChar, message);
+    }
+
+    private static void printNotDefined(String str) {
+        if (str.charAt(0) == '$') {
+            str = str.substring(1);
+        }
+        printError(str, String.format("\"%s\" is not defined", str));
+    }
+
     private static double makeNumber(String str) {
         try {
             return Double.parseDouble(str);
         } catch (NumberFormatException e) {
-            int firstChar = (iterator.getIndex() - str.length() + 1);
-            System.out.printf("Error at %d:%s%n\"%s\" is not defined%n", currentLine, firstChar, str);
+            printNotDefined(str);
             System.exit(1);
         }
         return 0;
@@ -129,8 +179,7 @@ class Lisp {
                 }
 
             case SET:
-                return null;
-
+            case READ:
             case PRINT:
                 return null;
         }
@@ -148,17 +197,21 @@ class Lisp {
         }
     }
 
+    // TODO Break up this function
     private static double evaluate() {
         String command = nextWord(" \n");
-        ArrayList<String> list = new ArrayList<>();
         boolean variableSet = false;
+        var list = new ArrayList<String>();
 
         iterator.next();
         for (char c = iterator.current(); c != ')' && c != iterator.DONE; c = iterator.next()) {
             String str = nextWord(" )" + iterator.DONE);
             if (str.isEmpty()) {
-                command = command.substring(0, command.length() - 1);
-                break;
+                if (command.replaceAll("[()]", "").equals("READ")) {
+                    break;
+                }
+                //noinspection ConstantConditions
+                return execute(new Group(command.replaceAll("[()]", ""), null));
             }
             if (str.charAt(0) == '(' && !command.equals("PRINT")) {
                 iterator.setIndex(iterator.getIndex() - str.length() + 1);
@@ -169,7 +222,12 @@ class Lisp {
 
             if (command.equals("SET") && !variableSet) {
                 iterator.next();
-                str = nextWord(" )");
+                str = nextWord(" )" + iterator.DONE);
+
+                if (str.isBlank()) {
+                    printError(str, "Need number to set \"" + list.get(0) + "\"");
+                    System.exit(1);
+                }
                 if (str.charAt(0) == '(') { // TODO Find a way to remove this duplicate code
                     iterator.setIndex(iterator.getIndex() - str.length() + 1);
                     str = String.valueOf(evaluate());
@@ -186,37 +244,24 @@ class Lisp {
             }
 
             if (command.equals("PRINT")) {
-                if (str.charAt(0) == '$') {
-                    if (str.charAt(1) == '(') { // TODO Find a way to remove this duplicate code
-                        list.remove(list.size() - 1);
-                        iterator.setIndex(iterator.getIndex() - str.length() + 1);
-                        iterator.next();
-                        str = String.valueOf(evaluate());
-                    } else {
-                        String variable = str.substring(1);
-                        list.remove(list.size() - 1);
-                        if (variables.containsKey(variable)) {
-                            str = variables.get(variable).toString();
-                        } else {
-                            iterator.next();
-                            makeNumber(str.substring(1));
-                        }
-                    }
-                    list.add(str);
-                } else if (str.charAt(0) == '(') {
-                    StringBuilder temp = new StringBuilder();
-                    while (iterator.next() != ')') {
-                        temp.append(iterator.current());
-                    }
-                    temp.append(iterator.current());
-                    list.add(temp.toString());
-                }
+                print(str, list);
             }
+
+        }
+        if (command.equals("READ")) {
+            Scanner scanner = new Scanner(System.in);
+            System.out.print(list.toString().replaceAll("[\\[\\],]", ""));
+            //noinspection ConstantConditions
+            return scanner.nextDouble();
         }
         if (command.equals("PRINT")) {
-            System.out.println(list.toString().replaceAll("[\\[\\],]", "").replaceAll("(\\.0$)", ""));
+            System.out.println(list.toString()
+                    .replaceAll("[\\[\\],]", "") // Remove braces and commas from list
+                    .replaceAll("(\\.0$)", "") // Remove ".0" if it is at the end of the string
+                    .replaceAll("(?<!\\\\)\\\\n", "\n") // Replace \n but not \\n with newline
+                    .replaceAll("\\\\\\B", "")); // Remove first backslash from \\
             //noinspection ConstantConditions
-            return execute(new Group(command, null));
+            return execute(null);
         }
 
         var numbers = createList(list);

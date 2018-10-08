@@ -14,5 +14,6 @@ public enum Operation {
     RAND,
     SET,
     PRINT,
+    READ,
     NULL
 }
