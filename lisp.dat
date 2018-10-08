@@ -1,3 +1,5 @@
+(SET _PRINT_LINES_ true) # Prints lines as they are evaluated
+
 (ADD 6 3)
 (SUB 6 3)
 (ADD 4 5 9)

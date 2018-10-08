@@ -7,8 +7,6 @@ import java.util.Map;
 import java.util.Scanner;
 import java.util.concurrent.ThreadLocalRandom;
 
-import static java.lang.System.out;
-
 class Lisp {
     // no instance variables are needed
 
@@ -227,12 +225,6 @@ class Lisp {
     }
 
     public static void main(String[] args) throws IOException {
-
-        // print out your name
-
-
-        out.println("Riley Quinn");
-
         Scanner input = new Scanner(new File("lisp.dat")); // reads in the lisp.dat file
 
         variables = new HashMap<>();
@@ -245,12 +237,6 @@ class Lisp {
 
         for (currentLine = 0; input.hasNextLine(); currentLine++) // loops through each data set
         {
-
-            // HINT: Read in an entire line as a String
-            //       Strip off the ( and ) parenthesis
-            //       Then create a Scanner object and pass it your String
-            //       Use scan.next() to read in the command
-            //       Finally, use a while (scan.hasNextInt()) to get the numbers
             String line = input.nextLine() + '\n';
 
             iterator = new StringCharacterIterator(line);
