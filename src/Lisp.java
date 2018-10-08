@@ -38,7 +38,7 @@ class Lisp {
         try {
             return Double.parseDouble(str);
         } catch (NumberFormatException e) {
-            int firstChar = (iterator.getIndex() - str.length());
+            int firstChar = (iterator.getIndex() - str.length() + 1);
             System.out.printf("Error at %d:%s%n\"%s\" is not defined%n", currentLine, firstChar, str);
             System.exit(1);
         }
@@ -179,7 +179,7 @@ class Lisp {
                     list.remove(0);
                     continue;
                 }
-                variables.put(list.get(0), makeNumber(str));
+                variables.put(list.get(0), variables.containsKey(str) ? variables.get(str) : makeNumber(str));
                 list.add(str);
                 list.remove(0);
                 variableSet = true;
@@ -235,7 +235,7 @@ class Lisp {
         settings.put("_PRINT_LINES_", false);
         settings.put("_STORE_ANS_", true);
 
-        for (currentLine = 0; input.hasNextLine(); currentLine++) // loops through each data set
+        for (currentLine = 1; input.hasNextLine(); ++currentLine) // loops through each data set
         {
             String line = input.nextLine() + '\n';
 
