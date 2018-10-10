@@ -2,7 +2,7 @@
 A LISP Interpreter written in Java
 
 ## How to use
-This is a W.I.P. Please look at [lisp.dat](lisp.dat).
+This is a W.I.P. Please look at [lisp.dat](lisp.dat). There is more documentation on the language itself in the [wiki](https://github.com/miniriley2012/LISP-Interpreter/wiki).
 <!--
 ## What this demonstrates (Not in any particular order)
  * Lexical Analysis
