@@ -169,13 +169,13 @@ class Lisp {
             case HYPOT:
                 return Math.hypot(list.get(0), list.get(1));
 
-            case RAND:
-                if (list.size() == 1) {
+            case RAND: // TODO add error message if lower bound is greater than upper bound
+                if (list == null || list.size() == 0) {
+                    return ThreadLocalRandom.current().nextDouble();
+                } else if (list.size() == 1) {
                     return (double) ThreadLocalRandom.current().nextInt(0, list.get(0).intValue() + 1);
                 } else if (list.size() == 2) {
                     return (double) ThreadLocalRandom.current().nextInt(list.get(0).intValue(), list.get(1).intValue() + 1);
-                } else {
-                    return ThreadLocalRandom.current().nextDouble();
                 }
 
             case SET:
