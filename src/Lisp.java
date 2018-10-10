@@ -8,8 +8,6 @@ import java.util.Scanner;
 import java.util.concurrent.ThreadLocalRandom;
 
 class Lisp {
-    // no instance variables are needed
-
     private static StringCharacterIterator iterator;
 
     private static int currentLine;
@@ -168,6 +166,15 @@ class Lisp {
 
             case HYPOT:
                 return Math.hypot(list.get(0), list.get(1));
+
+            case LOG:
+                if (list == null || list.size() == 0) {
+                    return null; // TODO Replace with exception
+                } else if (list.size() == 1) {
+                    return Math.log(list.get(0));
+                } else if (list.size() == 2) {
+                    return Math.log(list.get(0)) / Math.log(list.get(1));
+                }
 
             case RAND: // TODO add error message if lower bound is greater than upper bound
                 if (list == null || list.size() == 0) {
