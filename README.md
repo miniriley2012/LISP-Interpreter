@@ -1,9 +1,9 @@
-# LISP Interpreter - School Project
+# LISP Interpreter<!-- - School Project -->
 A LISP Interpreter written in Java
 
 ## How to use
 This is a W.I.P. Please look at [lisp.dat](lisp.dat).
-
+<!--
 ## What this demonstrates (Not in any particular order)
  * Lexical Analysis
  * RegEx
@@ -37,5 +37,6 @@ This is a W.I.P. Please look at [lisp.dat](lisp.dat).
    * Foreach Loops (`for (var item : list)`)
  * Functions/Methods
  * Type Inference through `var`
-   * Used to avoid duplicating type names that had generic parameters
+   * Used to avoid duplicating type names that had generic parmeters
  * Reflection
+-->
