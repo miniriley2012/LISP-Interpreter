@@ -1,16 +1,13 @@
 import java.io.File;
 import java.io.IOException;
 import java.text.StringCharacterIterator;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Scanner;
+import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
 class Lisp {
     private static StringCharacterIterator iterator;
 
-    private static Map<String, Double> variables;
+    private static Map<String, String> variables;
     private static Map<String, Boolean> settings;
 
     private static boolean shouldPrint;
@@ -44,7 +41,7 @@ class Lisp {
             }
         }
         if (str.charAt(0) == '$') {
-            if (str.charAt(1) == '(') { // TODO Find a way to remove this duplicate code
+            if (str.charAt(1) == '(') {
                 list.remove(list.size() - 1);
                 iterator.setIndex(iterator.getIndex() - str.length() + 1);
                 iterator.next();
@@ -53,7 +50,7 @@ class Lisp {
                 String variable = str.substring(1);
                 list.remove(list.size() - 1);
                 if (variables.containsKey(variable)) {
-                    str = variables.get(variable).toString();
+                    str = variables.get(variable);
                 } else {
                     iterator.next();
                     printNotDefined(str);
@@ -90,11 +87,16 @@ class Lisp {
         return 0;
     }
 
-    private static ArrayList<Double> createList(ArrayList<String> list) {
+    private static ArrayList<Double> createList(String command, ArrayList<String> list) {
         var tt = new ArrayList<Double>();
         for (String currentString : list) {
             if (variables.containsKey(currentString)) {
-                tt.add(variables.get(currentString));
+                try {
+                    tt.add(Double.valueOf(variables.get(currentString)));
+                } catch (NumberFormatException e) {
+                    iterator.setIndex(iterator.getIndex() - currentString.length() + 1);
+                    throw new ArgumentException("Wrong argument type for " + command);
+                }
                 continue;
             }
             tt.add(makeNumber(currentString));
@@ -173,7 +175,6 @@ class Lisp {
     // TODO Break up this function
     private static double evaluate() {
         String command = nextWord(" \n").replaceAll("[()]", "");
-        boolean variableSet = false;
         var list = new ArrayList<String>();
 
         iterator.next();
@@ -188,19 +189,23 @@ class Lisp {
                 }
                 return execute(new Group(command, null));
             }
+
             if (str.charAt(0) == '(' && !command.equals("PRINT")) {
                 iterator.setIndex(iterator.getIndex() - str.length() + 1);
                 str = String.valueOf(evaluate());
             }
 
-            list.add(str);
+            list.add(str = getString(str));
 
-            if (command.equals("SET") && !variableSet) {
+            if (command.equals("SET")) {
                 iterator.next();
                 str = nextWord(" )" + iterator.DONE);
 
                 if (str.isBlank()) {
                     throw new ArgumentException("Missing value to assign \"" + list.get(0) + "\" to");
+                }
+                if (str.startsWith("\"")) {
+                    str = getString(str);
                 }
                 if (str.charAt(0) == '(') { // TODO Find a way to remove this duplicate code
                     iterator.setIndex(iterator.getIndex() - str.length() + 1);
@@ -211,34 +216,50 @@ class Lisp {
                     list.remove(0);
                     return execute(new Group(command, null));
                 }
-                variables.put(list.get(0), variables.containsKey(str) ? variables.get(str) : makeNumber(str));
+                variables.put(list.get(0), variables.getOrDefault(list.get(0), str));
                 list.add(str);
                 list.remove(0);
-                variableSet = true;
+                return execute(new Group(command, null));
             }
 
             if (command.equals("PRINT")) {
                 print(str, list);
             }
-
         }
+
         if (command.equals("READ")) {
+            if (list.isEmpty()) {
+                throw new ArgumentException("READ requires arguments");
+            }
             Scanner scanner = new Scanner(System.in);
-            System.out.print(list.toString().replaceAll("[\\[\\],]", ""));
-            //noinspection ConstantConditions
-            return scanner.nextDouble();
+            variables.put(list.get(0), scanner.nextLine());
+            return execute(new Group(command, null));
         }
         if (command.equals("PRINT")) {
-            System.out.println(list.toString()
-                    .replaceAll("[\\[\\],]", "") // Remove braces and commas from list
+            System.out.print(list.toString()
+                    .replaceAll("[\\[\\]]", "") // Remove braces and commas from list
+                    .replaceAll("(, )", "")
                     .replaceAll("(\\.0$)", "") // Remove ".0" if it is at the end of the string
                     .replaceAll("(?<!\\\\)\\\\n", "\n") // Replace \n but not \\n with newline
                     .replaceAll("\\\\\\B", "")); // Remove first backslash from \\
             return execute(new Group(command, null));
         }
 
-        var numbers = createList(list);
+        var numbers = createList(command, list);
         return execute(new Group(command, numbers));
+    }
+
+    private static String getString(String str) {
+        if (str.startsWith("\"")) {
+            if (!str.endsWith("\"")) {
+                StringBuilder temp = new StringBuilder(str.replaceFirst("\"", ""));
+                for (char d = iterator.next(); d != '\"'; d = iterator.next()) {
+                    temp.append(d);
+                }
+                str = temp.toString();
+            }
+        }
+        return str.replaceAll("\"", "");
     }
 
     private static Operation chooseOperation(String str) {
@@ -249,12 +270,28 @@ class Lisp {
         }
     }
 
+    private static boolean balanced(String str) {
+        var stack = new Stack<Character>();
+
+        for (char c : str.toCharArray()) {
+            if (c == '(') {
+                stack.push(c);
+            } else if (c == ')') {
+                if (stack.empty() || stack.pop() != '(') {
+                    return false;
+                }
+            }
+        }
+
+        return stack.empty();
+    }
+
     public static void main(String[] args) throws IOException {
         Scanner input = new Scanner(new File("lisp.dat")); // reads in the lisp.dat file
 
         variables = new HashMap<>();
-        variables.put("PI", Math.PI);
-        variables.put("E", Math.E);
+        variables.put("PI", String.valueOf(Math.PI));
+        variables.put("E", String.valueOf(Math.E));
 
         settings = new HashMap<>();
         settings.put("_PRINT_LINES_", false);
@@ -263,6 +300,24 @@ class Lisp {
         for (int currentLine = 1; input.hasNextLine(); ++currentLine) // loops through each data set
         {
             String line = input.nextLine() + '\n';
+
+            if ((line.length() - line.replace("\"", "").length()) % 2 != 0) {
+                try {
+                    throw new SyntaxException("Quotes not balanced", line, currentLine);
+                } catch (SyntaxException e) {
+                    e.printError();
+                    System.exit(1);
+                }
+            }
+
+            if (!balanced(line)) {
+                try {
+                    throw new SyntaxException("Parentheses not balanced", line, currentLine);
+                } catch (SyntaxException e) {
+                    e.printError();
+                    System.exit(1);
+                }
+            }
 
             iterator = new StringCharacterIterator(line);
 
@@ -286,7 +341,7 @@ class Lisp {
                         }
                         Double evaluated = evaluate();
                         if (settings.get("_STORE_ANS_")) {
-                            variables.put("ANS", evaluated);
+                            variables.put("ANS", String.valueOf(evaluated));
                         }
                         if (shouldPrint) {
                             System.out.println(String.valueOf(evaluated).replaceAll("(\\.0$)", ""));
