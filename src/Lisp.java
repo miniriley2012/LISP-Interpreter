@@ -14,7 +14,6 @@ class Lisp {
 
     private static String nextWord(String delimiters) {
         StringBuilder str = new StringBuilder();
-        char c;
 
         // HACK These two lines are needed to skip all spaces
         //noinspection StatementWithEmptyBody
@@ -22,8 +21,8 @@ class Lisp {
         }
         iterator.previous(); // Backs up 1
 
-        while (delimiters.indexOf((c = iterator.next())) == -1) {
-            str.append(c);
+        while (delimiters.indexOf(iterator.next()) == -1) {
+            str.append(iterator.current());
         }
         iterator.previous(); // Includes delimiter
         return str.toString();
@@ -33,19 +32,21 @@ class Lisp {
         if (str.equals("\\") || str.equals("$")) {
             return;
         }
-        if (str.charAt(0) == '\\') {
+        if (str.startsWith("\\")) {
             if (str.charAt(1) == '$') {
                 return;
             } else if (str.charAt(1) == '\\') {
                 return;
             }
         }
-        if (str.charAt(0) == '$') {
+        if (str.startsWith("$")) {
             if (str.charAt(1) == '(') {
                 list.remove(list.size() - 1);
                 iterator.setIndex(iterator.getIndex() - str.length() + 1);
                 iterator.next();
                 str = String.valueOf(evaluate());
+                list.add(str);
+                return;
             } else {
                 String variable = str.substring(1);
                 list.remove(list.size() - 1);
@@ -58,7 +59,7 @@ class Lisp {
                 }
             }
             list.add(str);
-        } else if (str.charAt(0) == '(') {
+        } else if (str.startsWith("(")) {
             StringBuilder temp = new StringBuilder();
             while (iterator.next() != ')') {
                 temp.append(iterator.current());
@@ -178,8 +179,13 @@ class Lisp {
         var list = new ArrayList<String>();
 
         iterator.next();
-        for (char c = iterator.current(); c != ')' && c != iterator.DONE; c = iterator.next()) {
-            String str = nextWord(" )" + iterator.DONE);
+        for (; iterator.current() != ')' && iterator.current() != iterator.DONE; iterator.next()) {
+            String str;
+//            if (iterator.next() != '\"') {
+            str = nextWord(" )" + iterator.DONE);
+//            } else {
+//                str = nextWord(")" + iterator.DONE);
+//            }
             if (str.isEmpty()) {
                 if (list.isEmpty() && command.equals("SET")) {
                     throw new ArgumentException(command + " requires arguments");
@@ -236,9 +242,7 @@ class Lisp {
             return execute(new Group(command, null));
         }
         if (command.equals("PRINT")) {
-            System.out.print(list.toString()
-                    .replaceAll("[\\[\\]]", "") // Remove braces and commas from list
-                    .replaceAll("(, )", "")
+            System.out.print(String.join("", list)
                     .replaceAll("(\\.0$)", "") // Remove ".0" if it is at the end of the string
                     .replaceAll("(?<!\\\\)\\\\n", "\n") // Replace \n but not \\n with newline
                     .replaceAll("\\\\\\B", "")); // Remove first backslash from \\
