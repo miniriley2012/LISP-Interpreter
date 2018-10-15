@@ -28,6 +28,23 @@ class Lisp {
         return str.toString();
     }
 
+    private static String nextString() {
+        StringBuilder str = new StringBuilder();
+
+        while (iterator.next() != iterator.DONE) {
+            if (iterator.current() == '\"') {
+                if (iterator.previous() == '\\') {
+                    iterator.next();
+                } else {
+                    break;
+                }
+            }
+            str.append(iterator.current());
+        }
+
+        return str.toString();
+    }
+
     private static void print(String str, ArrayList<String> list) {
         if (str.equals("\\") || str.equals("$")) {
             return;
@@ -181,17 +198,21 @@ class Lisp {
         iterator.next();
         for (; iterator.current() != ')' && iterator.current() != iterator.DONE; iterator.next()) {
             String str;
-//            if (iterator.next() != '\"') {
-            str = nextWord(" )" + iterator.DONE);
-//            } else {
-//                str = nextWord(")" + iterator.DONE);
-//            }
+
+            if (iterator.next() == '\"') {
+                str = nextString();
+            } else {
+                iterator.previous();
+                str = nextWord(" )" + iterator.DONE);
+            }
+
             if (str.isEmpty()) {
                 if (list.isEmpty() && command.equals("SET")) {
                     throw new ArgumentException(command + " requires arguments");
-                }
-                if (command.equals("READ")) {
+                } else if (command.equals("READ")) {
                     break;
+                } else if (command.equals("PRINT")) {
+                    continue;
                 }
                 return execute(new Group(command, null));
             }
@@ -201,7 +222,7 @@ class Lisp {
                 str = String.valueOf(evaluate());
             }
 
-            list.add(str = getString(str));
+            list.add(str);
 
             if (command.equals("SET")) {
                 iterator.next();
@@ -244,6 +265,8 @@ class Lisp {
         if (command.equals("PRINT")) {
             System.out.print(String.join("", list)
                     .replaceAll("(\\.0$)", "") // Remove ".0" if it is at the end of the string
+                    .replaceAll("(\\.0) ", " ") // Replace the remaining ".0"s if they are within the string
+                    .replaceAll("(\\.0)\\\\n", "\\\\n") // Replace the remaining ".0"s if they are before a newline
                     .replaceAll("(?<!\\\\)\\\\n", "\n") // Replace \n but not \\n with newline
                     .replaceAll("\\\\\\B", "")); // Remove first backslash from \\
             return execute(new Group(command, null));
@@ -305,7 +328,7 @@ class Lisp {
         {
             String line = input.nextLine() + '\n';
 
-            if ((line.length() - line.replace("\"", "").length()) % 2 != 0) {
+            if ((line.length() - line.replaceAll("(?<!\\\\)\"", "").length()) % 2 != 0) {
                 try {
                     throw new SyntaxException("Quotes not balanced", line, currentLine);
                 } catch (SyntaxException e) {
