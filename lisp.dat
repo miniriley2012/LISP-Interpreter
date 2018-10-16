@@ -1,4 +1,15 @@
-(SET _PRINT_LINES_ true) # Prints lines as they are evaluated
+#(SET _PRINT_LINES_ true) # Prints lines as they are evaluated
+
+(PRINT "Enter your name: ")
+(READ name)
+(PRINT "Hello, " $name "\n")
+
+(PRINT "Enter your age: ")
+(READ age)
+
+(PRINT "Dog years: " $(MUL age 7) "\n")
+
+(PRINT "Age in days: " $(MUL age 365.25) "\n")
 
 (ADD 6 3)
 (SUB 6 3)
